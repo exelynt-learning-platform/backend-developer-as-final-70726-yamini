@@ -50,11 +50,12 @@ public class ReservationService {
         r.setStartTime(dto.getStartTime());
         r.setEndTime(dto.getEndTime());
 
-        BigDecimal price = dto.getPrice() != null ? dto.getPrice() : resource.getPrice();
-        if (price == null || price.signum() < 0) {
-            throw new BadRequestException("Invalid price");
+        // Use the resource's configured price to prevent client-side price manipulation.
+        BigDecimal resourcePrice = resource.getPrice();
+        if (resourcePrice == null || resourcePrice.signum() < 0) {
+            throw new BadRequestException("Resource has invalid price");
         }
-        r.setPrice(price);
+        r.setPrice(resourcePrice);
         r.setStatus(ReservationStatus.PENDING);
 
         Reservation saved = reservationRepository.save(r);

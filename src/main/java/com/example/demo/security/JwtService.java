@@ -1,8 +1,12 @@
 package com.example.demo.security;
 
 import java.security.Key;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +17,8 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JwtService {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     @Value("${app.jwt.secret}")
     private String secretKey;
@@ -72,17 +78,21 @@ public class JwtService {
 
     // Create signing key
     private Key getSigningKey() {
+        byte[] keyBytes;
 
         if (secretKey == null || secretKey.trim().isEmpty()) {
-            throw new IllegalStateException("JWT secret is not configured. Set the JWT_SECRET environment variable.");
-        }
-
-        byte[] keyBytes;
-        try {
-            keyBytes = Decoders.BASE64.decode(secretKey);
-        } catch (IllegalArgumentException ex) {
-            // provide clearer message if not valid base64
-            throw new IllegalStateException("JWT secret is not valid Base64-encoded key", ex);
+            // Generate a secure random 256-bit key for development/runtime when JWT_SECRET is not provided.
+            logger.warn("JWT secret not set. Generating a temporary secret for this runtime. Set JWT_SECRET in production.");
+            byte[] randomBytes = new byte[32]; // 256 bits
+            new SecureRandom().nextBytes(randomBytes);
+            keyBytes = randomBytes;
+        } else {
+            try {
+                keyBytes = Decoders.BASE64.decode(secretKey);
+            } catch (IllegalArgumentException ex) {
+                // provide clearer message if not valid base64
+                throw new IllegalStateException("JWT secret is not valid Base64-encoded key", ex);
+            }
         }
 
         return Keys.hmacShaKeyFor(keyBytes);
