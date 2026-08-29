@@ -5,8 +5,4 @@ public class BadRequestException extends RuntimeException {
         super(message);
     }
 }
-package com.example.demo.exception;
 
-public class BadRequestException {
-
-}

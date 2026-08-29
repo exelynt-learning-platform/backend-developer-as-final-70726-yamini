@@ -152,8 +152,4 @@ public class ReservationService {
         reservationRepository.deleteById(reservationId);
     }
 }
-package com.example.demo.service;
 
-public class ReservationService {
-
-}

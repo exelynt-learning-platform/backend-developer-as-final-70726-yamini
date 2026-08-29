@@ -5,8 +5,4 @@ public class UnauthorizedException extends RuntimeException {
         super(message);
     }
 }
-package com.example.demo.exception;
 
-public class UnauthorizedException {
-
-}

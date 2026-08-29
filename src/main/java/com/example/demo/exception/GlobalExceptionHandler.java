@@ -55,8 +55,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
     }
 }
-package com.example.demo.exception;
 
-public class GlobalExceptionHandler {
-
-}

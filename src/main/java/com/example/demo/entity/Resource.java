@@ -81,8 +81,4 @@ public class Resource {
         return updatedAt;
     }
 }
-package com.example.demo.entity;
 
-public class Resource {
-
-}
