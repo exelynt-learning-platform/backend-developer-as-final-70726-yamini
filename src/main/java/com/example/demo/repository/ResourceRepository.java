@@ -5,8 +5,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
 }
-package com.example.demo.repository;
 
-public class ResourceRepository {
-
-}

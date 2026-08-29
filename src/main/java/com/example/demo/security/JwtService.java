@@ -73,8 +73,17 @@ public class JwtService {
     // Create signing key
     private Key getSigningKey() {
 
-        byte[] keyBytes =
-                Decoders.BASE64.decode(secretKey);
+        if (secretKey == null || secretKey.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret is not configured. Set the JWT_SECRET environment variable.");
+        }
+
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(secretKey);
+        } catch (IllegalArgumentException ex) {
+            // provide clearer message if not valid base64
+            throw new IllegalStateException("JWT secret is not valid Base64-encoded key", ex);
+        }
 
         return Keys.hmacShaKeyFor(keyBytes);
     }
