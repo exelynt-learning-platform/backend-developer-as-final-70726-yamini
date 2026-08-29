@@ -104,7 +104,8 @@ public class JwtService {
                 // Prefer Base64-encoded key but accept a raw secret string as fallback
                 try {
                     keyBytes = Decoders.BASE64.decode(secretKey);
-                } catch (IllegalArgumentException ex) {
+                } catch (Exception ex) {
+                    // Decoders.BASE64 throws DecodingException for invalid base64; fall back to raw bytes
                     keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 }
 
