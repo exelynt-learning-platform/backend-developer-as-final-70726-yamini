@@ -15,6 +15,7 @@ import com.example.demo.repository.ResourceRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -71,72 +72,43 @@ public class ReservationService {
     }
 
     public Page<ReservationDto> searchReservationsForAdmin(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        if (status != null && minPrice != null && maxPrice != null) {
-            return reservationRepository.findAllByStatusAndPriceBetween(status, minPrice, maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (status != null && minPrice != null && maxPrice == null) {
-            return reservationRepository.findAllByStatusAndPriceGreaterThanEqual(status, minPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (status != null && maxPrice != null && minPrice == null) {
-            return reservationRepository.findAllByStatusAndPriceLessThanEqual(status, maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (status != null) {
-            return reservationRepository.findAllByStatus(status, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (minPrice != null && maxPrice != null) {
-            return reservationRepository.findAllByPriceBetween(minPrice, maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (minPrice != null) {
-            return reservationRepository.findAllByPriceGreaterThanEqual(minPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (maxPrice != null) {
-            return reservationRepository.findAllByPriceLessThanEqual(maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        return reservationRepository.findAll(pageable).map(ReservationMapper::toDto);
+        Specification<Reservation> spec = buildSpecification(null, status, minPrice, maxPrice);
+        return reservationRepository.findAll(spec, pageable).map(ReservationMapper::toDto);
     }
 
     public Page<ReservationDto> searchReservationsForUser(Long userId, ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        if (status != null && minPrice != null && maxPrice != null) {
-            return reservationRepository.findByUserIdAndStatusAndPriceBetween(userId, status, minPrice, maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (status != null && minPrice != null && maxPrice == null) {
-            return reservationRepository.findByUserIdAndStatusAndPriceGreaterThanEqual(userId, status, minPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (status != null && maxPrice != null && minPrice == null) {
-            return reservationRepository.findByUserIdAndStatusAndPriceLessThanEqual(userId, status, maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (status != null) {
-            return reservationRepository.findByUserIdAndStatus(userId, status, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (minPrice != null && maxPrice != null) {
-            return reservationRepository.findByUserIdAndPriceBetween(userId, minPrice, maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (minPrice != null) {
-            return reservationRepository.findByUserIdAndPriceGreaterThanEqual(userId, minPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        if (maxPrice != null) {
-            return reservationRepository.findByUserIdAndPriceLessThanEqual(userId, maxPrice, pageable).map(ReservationMapper::toDto);
-        }
-
-        return findAllForUser(userId, pageable);
+        Specification<Reservation> spec = buildSpecification(userId, status, minPrice, maxPrice);
+        return reservationRepository.findAll(spec, pageable).map(ReservationMapper::toDto);
     }
 
     // helper renamed to follow Java naming conventions
     private Page<ReservationDto> findAllForUser(Long userId, Pageable pageable) {
         return reservationRepository.findByUserId(userId, pageable).map(ReservationMapper::toDto);
+    }
+
+    // Build a dynamic Specification for Reservation searches
+    private Specification<Reservation> buildSpecification(Long userId, ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice) {
+        return (root, query, cb) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> preds = new java.util.ArrayList<>();
+
+            if (userId != null) {
+                preds.add(cb.equal(root.get("user").get("id"), userId));
+            }
+
+            if (status != null) {
+                preds.add(cb.equal(root.get("status"), status));
+            }
+
+            if (minPrice != null && maxPrice != null) {
+                preds.add(cb.between(root.get("price"), minPrice, maxPrice));
+            } else if (minPrice != null) {
+                preds.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
+            } else if (maxPrice != null) {
+                preds.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+
+            return cb.and(preds.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
     }
 
     public ReservationDto updateStatus(Long reservationId, ReservationStatus newStatus) {

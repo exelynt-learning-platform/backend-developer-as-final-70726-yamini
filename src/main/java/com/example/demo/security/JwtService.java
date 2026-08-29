@@ -23,7 +23,7 @@ public class JwtService {
     @Value("${app.jwt.secret:}")
     private String secretKey;
 
-    @Value("${app.jwt.expiration}")
+    @Value("${app.jwt.expiration:86400000}")
     private long jwtExpiration;
 
     // cached signing key for this runtime
