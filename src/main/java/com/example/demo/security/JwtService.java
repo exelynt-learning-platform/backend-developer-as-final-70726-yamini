@@ -29,8 +29,7 @@ public class JwtService {
     // cached signing key for this runtime
     private volatile java.security.Key signingKey;
 
-    @Value("${app.jwt.allow-runtime-fallback:false}")
-    private boolean allowRuntimeFallback;
+    // Runtime fallback removed for production safety. Tests must provide `app.jwt.secret`.
 
     // Generate JWT token
     public String generateToken(String email) {
@@ -92,21 +91,18 @@ public class JwtService {
             byte[] keyBytes;
 
             if (secretKey == null || secretKey.trim().isEmpty()) {
-                if (!allowRuntimeFallback) {
-                    throw new IllegalStateException("JWT secret not configured. Set app.jwt.secret or JWT_SECRET in environment for production.");
-                }
-                // Generate a secure random 256-bit key for development/runtime when explicitly allowed.
-                logger.warn("JWT secret not set. Generating a temporary secret for this runtime because app.jwt.allow-runtime-fallback=true. Set JWT_SECRET in production.");
-                byte[] randomBytes = new byte[32]; // 256 bits
-                new SecureRandom().nextBytes(randomBytes);
-                keyBytes = randomBytes;
-            } else {
-                try {
-                    keyBytes = Decoders.BASE64.decode(secretKey);
-                } catch (IllegalArgumentException ex) {
-                    // provide clearer message if not valid base64
-                    throw new IllegalStateException("JWT secret is not valid Base64-encoded key", ex);
-                }
+                throw new IllegalStateException("JWT secret not configured. Set app.jwt.secret or JWT_SECRET in environment for production.");
+            }
+
+            // Prefer Base64-encoded key but accept a raw secret string as fallback
+            try {
+                keyBytes = Decoders.BASE64.decode(secretKey);
+            } catch (IllegalArgumentException ex) {
+                keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            }
+
+            if (keyBytes.length < 32) {
+                throw new IllegalStateException("JWT secret must be at least 256 bits (32 bytes). Provide a Base64-encoded 256-bit key or a raw secret >=32 bytes.");
             }
 
             signingKey = Keys.hmacShaKeyFor(keyBytes);
