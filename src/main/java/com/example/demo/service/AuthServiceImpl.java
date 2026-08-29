@@ -9,6 +9,7 @@ import com.example.demo.repository.UserRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.demo.security.JwtService;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -16,13 +17,16 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthServiceImpl(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -82,6 +86,10 @@ public class AuthServiceImpl implements AuthService {
         response.setMessage("Login successful");
 
         response.setEmail(user.getEmail());
+
+        // generate JWT token
+        String token = jwtService.generateToken(user.getEmail());
+        response.setToken(token);
 
         return response;
     }
