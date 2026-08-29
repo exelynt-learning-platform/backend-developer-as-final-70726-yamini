@@ -32,6 +32,14 @@ public class SecurityConfig {
 
             .csrf(csrf -> csrf.disable())
 
+            // Add common security headers to mitigate clickjacking, MIME sniffing,
+            // and enforce HSTS for HTTPS deployments.
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+                .contentTypeOptions(contentTypeOptions -> {})
+                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+            )
+
             .sessionManagement(session ->
                 session.sessionCreationPolicy(
                     SessionCreationPolicy.STATELESS
