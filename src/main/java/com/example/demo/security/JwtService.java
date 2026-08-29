@@ -29,6 +29,9 @@ public class JwtService {
     // cached signing key for this runtime
     private volatile java.security.Key signingKey;
 
+    @Value("${app.jwt.allow-runtime-fallback:false}")
+    private boolean allowRuntimeFallback;
+
     // Generate JWT token
     public String generateToken(String email) {
 
@@ -89,8 +92,11 @@ public class JwtService {
             byte[] keyBytes;
 
             if (secretKey == null || secretKey.trim().isEmpty()) {
-                // Generate a secure random 256-bit key for development/runtime when JWT_SECRET is not provided.
-                logger.warn("JWT secret not set. Generating a temporary secret for this runtime. Set JWT_SECRET in production.");
+                if (!allowRuntimeFallback) {
+                    throw new IllegalStateException("JWT secret not configured. Set app.jwt.secret or JWT_SECRET in environment for production.");
+                }
+                // Generate a secure random 256-bit key for development/runtime when explicitly allowed.
+                logger.warn("JWT secret not set. Generating a temporary secret for this runtime because app.jwt.allow-runtime-fallback=true. Set JWT_SECRET in production.");
                 byte[] randomBytes = new byte[32]; // 256 bits
                 new SecureRandom().nextBytes(randomBytes);
                 keyBytes = randomBytes;

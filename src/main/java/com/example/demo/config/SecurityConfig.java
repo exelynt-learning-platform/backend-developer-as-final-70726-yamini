@@ -44,17 +44,6 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-                // Allow internal MVC forwards to JSP
-                .dispatcherTypeMatchers(
-                    DispatcherType.FORWARD,
-                    DispatcherType.ERROR
-                ).permitAll()
-
-                // Public JSP pages
-                .requestMatchers("/", "/login","/register","/loginCheck","/home").permitAll()
-
-                // Admin
-                .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Static resources
                 .requestMatchers(
                     "/css/**",
@@ -62,6 +51,8 @@ public class SecurityConfig {
                     "/images/**"
                 ).permitAll()
 
+                // Admin
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Authentication APIs
                 .requestMatchers("/api/auth/**").permitAll()
 
