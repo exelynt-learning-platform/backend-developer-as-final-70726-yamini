@@ -18,6 +18,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private String role;
+
     public Long getId() {
         return id;
     }
@@ -46,8 +49,11 @@ public class User {
         this.password = password;
     }
 
-	public void setRole(String string) {
-		// TODO Auto-generated method stub
-		
-	}
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 }

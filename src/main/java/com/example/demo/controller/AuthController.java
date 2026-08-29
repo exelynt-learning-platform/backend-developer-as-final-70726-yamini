@@ -27,6 +27,8 @@ public class AuthController {
     public ResponseEntity<RegisterResponse> register(
             @Valid @RequestBody RegisterRequest request) {
 
+    	
+    	System.out.println("request:::"+request);
         RegisterResponse response =
                 authService.register(request);
 
