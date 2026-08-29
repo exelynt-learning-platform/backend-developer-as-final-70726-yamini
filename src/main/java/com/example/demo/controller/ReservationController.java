@@ -81,7 +81,16 @@ public class ReservationController {
             // expected format: property,asc|desc
             String[] parts = sort.split(",");
             if (parts.length == 2) {
-                Sort.Direction dir = Sort.Direction.fromString(parts[1]);
+                String dirStr = parts[1].trim().toLowerCase();
+                if (!dirStr.equals("asc") && !dirStr.equals("desc")) {
+                    throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
+                }
+                Sort.Direction dir;
+                try {
+                    dir = Sort.Direction.fromString(dirStr);
+                } catch (IllegalArgumentException ex) {
+                    throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
+                }
                 sortObj = Sort.by(dir, parts[0]);
             } else {
                 sortObj = Sort.by(sort);

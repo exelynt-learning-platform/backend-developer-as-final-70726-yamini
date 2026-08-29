@@ -33,8 +33,7 @@ public class AuthServiceImpl implements AuthService {
     public RegisterResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-
-            throw new RuntimeException("Email already registered");
+            throw new com.example.demo.exception.BadRequestException("Email already registered");
         }
 
         User user = new User();
@@ -66,9 +65,8 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
 
         User user = userRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password"));
+            .findByEmail(request.getEmail())
+            .orElseThrow(() -> new com.example.demo.exception.AuthenticationException("Invalid email or password"));
 
         boolean passwordMatches =
                 passwordEncoder.matches(
@@ -77,8 +75,7 @@ public class AuthServiceImpl implements AuthService {
                 );
 
         if (!passwordMatches) {
-
-            throw new RuntimeException("Invalid email or password");
+            throw new com.example.demo.exception.AuthenticationException("Invalid email or password");
         }
 
         LoginResponse response = new LoginResponse();
