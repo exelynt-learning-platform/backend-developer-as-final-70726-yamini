@@ -13,5 +13,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
     // Legacy derived query methods remain for compatibility. Prefer Specification-based searches.
     Page<Reservation> findByUserId(Long userId, Pageable pageable);
+
+    // Atomic delete that ensures ownership: returns number of rows deleted (0 or 1)
+    long deleteByIdAndUserId(Long id, Long userId);
 }
 

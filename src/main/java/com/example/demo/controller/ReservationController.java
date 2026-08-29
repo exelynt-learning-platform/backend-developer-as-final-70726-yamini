@@ -137,9 +137,8 @@ public class ReservationController {
             return ResponseEntity.noContent().build();
         }
         Long userId = currentUserId(authentication);
-        // ensure ownership
-        reservationService.getReservation(id, userId, false);
-        reservationService.deleteReservation(id);
+        // perform atomic ownership-checked delete to avoid TOCTOU
+        reservationService.deleteReservation(id, userId, false);
         return ResponseEntity.noContent().build();
     }
 }

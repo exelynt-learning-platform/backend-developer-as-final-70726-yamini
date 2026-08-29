@@ -127,5 +127,19 @@ public class ReservationService {
         }
         reservationRepository.deleteById(reservationId);
     }
+
+    // Atomic delete with ownership check to avoid TOCTOU
+    public void deleteReservation(Long reservationId, Long requesterId, boolean isAdmin) {
+        if (isAdmin) {
+            deleteReservation(reservationId);
+            return;
+        }
+
+        long deleted = reservationRepository.deleteByIdAndUserId(reservationId, requesterId);
+        if (deleted == 0) {
+            // Could be not found or not owned by requester
+            throw new ReservationNotFoundException("Reservation not found: " + reservationId);
+        }
+    }
 }
 
