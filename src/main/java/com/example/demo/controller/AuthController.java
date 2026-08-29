@@ -27,8 +27,6 @@ public class AuthController {
     public ResponseEntity<RegisterResponse> register(
             @Valid @RequestBody RegisterRequest request) {
 
-    	
-    	System.out.println("request:::"+request);
         RegisterResponse response =
                 authService.register(request);
 
@@ -42,7 +40,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
-        System.out.println("request::"+request.toString());
         LoginResponse response =
                 authService.login(request);
 

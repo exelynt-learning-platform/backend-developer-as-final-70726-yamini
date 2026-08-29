@@ -49,8 +49,4 @@ public class ResourceController {
         return ResponseEntity.noContent().build();
     }
 }
-package com.example.demo.controller;
 
-public class ResourceController {
-
-}

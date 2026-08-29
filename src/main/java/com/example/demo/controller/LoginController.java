@@ -24,21 +24,21 @@ public class LoginController {
 
     @GetMapping("/")
     public String login() {
-        System.out.println("LOGIN CONTROLLER CALLED");
+        // show login page
 
         return "login";
     }
 
     @GetMapping("/login")
     public String loginPage() {
-        System.out.println("LOGIN CONTROLLER CALLED | login");
+        // show login page
 
         return "login";
     }
     
     @GetMapping("/home")
     public String homePage() {
-        System.out.println("LOGIN CONTROLLER CALLED | home");
+        // show home page
 
         return "home";
     }
@@ -46,7 +46,7 @@ public class LoginController {
     
     @GetMapping("/register")
     public String registerPage() {
-        System.out.println("LOGIN CONTROLLER CALLED | register");
+        // show register page
 
         return "register";
     }

@@ -38,8 +38,4 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     Page<Reservation> findByUserIdAndStatusAndPriceGreaterThanEqual(Long userId, ReservationStatus status, BigDecimal minPrice, Pageable pageable);
     Page<Reservation> findByUserIdAndStatusAndPriceLessThanEqual(Long userId, ReservationStatus status, BigDecimal maxPrice, Pageable pageable);
 }
-package com.example.demo.repository;
 
-public class ReservationRepository {
-
-}

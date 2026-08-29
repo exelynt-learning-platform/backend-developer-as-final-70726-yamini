@@ -124,8 +124,4 @@ public class ReservationController {
         return ResponseEntity.noContent().build();
     }
 }
-package com.example.demo.controller;
 
-public class ReservationController {
-
-}

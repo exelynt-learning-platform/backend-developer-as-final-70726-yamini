@@ -9,7 +9,7 @@ public class AdminController {
     @GetMapping("/admin")
     public String adminDashboard() {
 
-        System.out.println("ADMIN DASHBOARD CALLED");
+        // admin dashboard view
 
         return "admin/admin-dashboard";
     }
