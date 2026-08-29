@@ -50,13 +50,12 @@ public class AuthServiceImpl implements AuthService {
         // Assign default role to newly registered user
         user.setRole("USER");
 
-        userRepository.save(user);
+        // persist and flush so generated id and other DB-populated fields are available
+        User saved = userRepository.saveAndFlush(user);
 
         RegisterResponse response = new RegisterResponse();
-
         response.setMessage("User registered successfully");
-
-        response.setEmail(user.getEmail());
+        response.setEmail(saved.getEmail());
 
         return response;
     }

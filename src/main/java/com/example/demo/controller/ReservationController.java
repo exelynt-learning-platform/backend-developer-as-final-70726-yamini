@@ -96,6 +96,14 @@ public class ReservationController {
                 sortObj = Sort.by(sort);
             }
         }
+        // validate pagination inputs to return structured 400 errors instead of 500
+        if (page < 0) {
+            throw new BadRequestException("'page' must be >= 0");
+        }
+        if (size <= 0 || size > 200) {
+            throw new BadRequestException("'size' must be > 0 and <= 200");
+        }
+
         PageRequest pageable = PageRequest.of(page, size, sortObj);
 
         boolean admin = isAdmin(authentication);

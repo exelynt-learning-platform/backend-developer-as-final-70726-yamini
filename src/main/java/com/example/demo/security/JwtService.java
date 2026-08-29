@@ -26,6 +26,9 @@ public class JwtService {
     @Value("${app.jwt.expiration}")
     private long jwtExpiration;
 
+    // cached signing key for this runtime
+    private volatile java.security.Key signingKey;
+
     // Generate JWT token
     public String generateToken(String email) {
 
@@ -78,23 +81,30 @@ public class JwtService {
 
     // Create signing key
     private Key getSigningKey() {
-        byte[] keyBytes;
+        if (signingKey != null) return signingKey;
 
-        if (secretKey == null || secretKey.trim().isEmpty()) {
-            // Generate a secure random 256-bit key for development/runtime when JWT_SECRET is not provided.
-            logger.warn("JWT secret not set. Generating a temporary secret for this runtime. Set JWT_SECRET in production.");
-            byte[] randomBytes = new byte[32]; // 256 bits
-            new SecureRandom().nextBytes(randomBytes);
-            keyBytes = randomBytes;
-        } else {
-            try {
-                keyBytes = Decoders.BASE64.decode(secretKey);
-            } catch (IllegalArgumentException ex) {
-                // provide clearer message if not valid base64
-                throw new IllegalStateException("JWT secret is not valid Base64-encoded key", ex);
+        synchronized (this) {
+            if (signingKey != null) return signingKey;
+
+            byte[] keyBytes;
+
+            if (secretKey == null || secretKey.trim().isEmpty()) {
+                // Generate a secure random 256-bit key for development/runtime when JWT_SECRET is not provided.
+                logger.warn("JWT secret not set. Generating a temporary secret for this runtime. Set JWT_SECRET in production.");
+                byte[] randomBytes = new byte[32]; // 256 bits
+                new SecureRandom().nextBytes(randomBytes);
+                keyBytes = randomBytes;
+            } else {
+                try {
+                    keyBytes = Decoders.BASE64.decode(secretKey);
+                } catch (IllegalArgumentException ex) {
+                    // provide clearer message if not valid base64
+                    throw new IllegalStateException("JWT secret is not valid Base64-encoded key", ex);
+                }
             }
-        }
 
-        return Keys.hmacShaKeyFor(keyBytes);
+            signingKey = Keys.hmacShaKeyFor(keyBytes);
+            return signingKey;
+        }
     }
 }
