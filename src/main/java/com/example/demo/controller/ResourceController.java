@@ -20,11 +20,13 @@ public class ResourceController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public List<ResourceDto> list() {
         return resourceService.findAll();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResourceDto get(@PathVariable Long id) {
         return resourceService.findById(id);
     }
