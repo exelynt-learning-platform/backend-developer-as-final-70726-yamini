@@ -2,8 +2,11 @@ package com.example.demo.security;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -18,6 +21,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
@@ -50,45 +55,54 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-
             // 4. Extract email from JWT
             String email = jwtService.extractUsername(token);
 
             // 5. Check whether user is already authenticated
             if (email != null
-                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+                && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                // 6. Load user from database
-                UserDetails userDetails =
-                        customUserDetailsService.loadUserByUsername(email);
+            // 6. Load user from database
+            UserDetails userDetails =
+                customUserDetailsService.loadUserByUsername(email);
 
-                // 7. Validate JWT
-                if (jwtService.isTokenValid(token, email)) {
+            // 7. Validate JWT
+            if (jwtService.isTokenValid(token, email)) {
 
-                    // 8. Create authentication object
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
-
-                    // 9. Add request details
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request)
+                // 8. Create authentication object
+                UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
                     );
 
-                    // 10. Store authentication in SecurityContext
-                    SecurityContextHolder
-                            .getContext()
-                            .setAuthentication(authentication);
-                }
+                // 9. Add request details
+                authentication.setDetails(
+                    new WebAuthenticationDetailsSource()
+                        .buildDetails(request)
+                );
+
+                // 10. Store authentication in SecurityContext
+                SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authentication);
+            }
             }
 
-        } catch (Exception e) {
+        } catch (io.jsonwebtoken.JwtException | IllegalStateException | UsernameNotFoundException ex) {
+            // Known auth failures: token invalid/expired, misconfigured JWT secret, or missing user
+            logger.warn("Authentication failed: {}", ex.getMessage());
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            String body = String.format("{\"error\":\"Unauthorized\",\"message\":\"%s\"}", ex.getMessage().replaceAll("\"","'"));
+            response.getWriter().write(body);
+            return;
 
-            // Invalid or expired JWT
+        } catch (Exception e) {
+            // Unexpected errors: clear context and continue so other filters/handlers can respond
+            logger.error("Unexpected error in JWT filter", e);
             SecurityContextHolder.clearContext();
         }
 

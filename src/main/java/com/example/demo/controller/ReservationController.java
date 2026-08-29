@@ -110,6 +110,9 @@ public class ReservationController {
         if (admin) {
             return reservationService.searchReservationsForAdmin(rs, minPrice, maxPrice, pageable);
         }
+        if (authentication == null) {
+            throw new UnauthorizedException("Unauthenticated");
+        }
         Long userId = currentUserId(authentication);
         return reservationService.searchReservationsForUser(userId, rs, minPrice, maxPrice, pageable);
     }
