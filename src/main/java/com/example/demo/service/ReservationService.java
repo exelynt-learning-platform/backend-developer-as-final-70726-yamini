@@ -131,11 +131,11 @@ public class ReservationService {
             return reservationRepository.findByUserIdAndPriceLessThanEqual(userId, maxPrice, pageable).map(ReservationMapper::toDto);
         }
 
-        return reservation_repository_find_all_for_user(userId, pageable);
+        return findAllForUser(userId, pageable);
     }
 
-    // fallback helper to use existing method name
-    private Page<ReservationDto> reservation_repository_find_all_for_user(Long userId, Pageable pageable) {
+    // helper renamed to follow Java naming conventions
+    private Page<ReservationDto> findAllForUser(Long userId, Pageable pageable) {
         return reservationRepository.findByUserId(userId, pageable).map(ReservationMapper::toDto);
     }
 
