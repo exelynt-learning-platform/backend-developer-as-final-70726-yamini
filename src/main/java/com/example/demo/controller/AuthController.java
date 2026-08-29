@@ -37,10 +37,12 @@ public class AuthController {
                 .body(response);
     }
 
+   
+    
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
-
+        System.out.println("request::"+request.toString());
         LoginResponse response =
                 authService.login(request);
 

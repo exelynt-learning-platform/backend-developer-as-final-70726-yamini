@@ -1,9 +1,13 @@
 package com.example.demo.config;
 
+import jakarta.servlet.DispatcherType;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -23,34 +27,53 @@ public class SecurityConfig {
             HttpSecurity http) throws Exception {
 
         http
-            // Disable CSRF because this is a REST API using JWT
+
             .csrf(csrf -> csrf.disable())
 
-            // Do not create/use HTTP sessions
             .sessionManagement(session ->
                 session.sessionCreationPolicy(
                     SessionCreationPolicy.STATELESS
                 )
             )
 
-            // Authorization rules
+            .formLogin(form -> form.disable())
+
+            .httpBasic(basic -> basic.disable())
+
             .authorizeHttpRequests(auth -> auth
 
-                // Register and Login are public
+                // Allow internal MVC forwards to JSP
+                .dispatcherTypeMatchers(
+                    DispatcherType.FORWARD,
+                    DispatcherType.ERROR
+                ).permitAll()
+
+                // Public JSP pages
+                .requestMatchers("/", "/login","/register","/loginCheck","/home").permitAll()
+
+                // Admin
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                // Static resources
+                .requestMatchers(
+                    "/css/**",
+                    "/js/**",
+                    "/images/**"
+                ).permitAll()
+
+                // Authentication APIs
                 .requestMatchers("/api/auth/**").permitAll()
 
-                // Swagger is public
+                // Swagger
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**"
                 ).permitAll()
 
-                // All remaining endpoints require authentication
+                // Everything else requires authentication
                 .anyRequest().authenticated()
             )
 
-            // Run JWT filter before Spring's username/password filter
             .addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class

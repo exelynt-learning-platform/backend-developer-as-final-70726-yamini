@@ -23,4 +23,11 @@ public class LoginResponse {
     public void setEmail(String email) {
         this.email = email;
     }
+
+	@Override
+	public String toString() {
+		return "LoginResponse [message=" + message + ", email=" + email + "]";
+	}
+    
+    
 }
