@@ -19,7 +19,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+ 
 
 @Service
 public class ReservationService {
@@ -81,13 +81,16 @@ public class ReservationService {
         return reservationRepository.findAll(spec, pageable).map(ReservationMapper::toDto);
     }
 
-    // helper renamed to follow Java naming conventions
-    private Page<ReservationDto> findAllForUser(Long userId, Pageable pageable) {
-        return reservationRepository.findByUserId(userId, pageable).map(ReservationMapper::toDto);
+    // Validate price range inputs used by searches
+    private void validatePriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new BadRequestException("minPrice cannot be greater than maxPrice");
+        }
     }
 
     // Build a dynamic Specification for Reservation searches
     private Specification<Reservation> buildSpecification(Long userId, ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice) {
+        validatePriceRange(minPrice, maxPrice);
         return (root, query, cb) -> {
             java.util.List<jakarta.persistence.criteria.Predicate> preds = new java.util.ArrayList<>();
 
