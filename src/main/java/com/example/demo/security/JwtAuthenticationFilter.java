@@ -92,12 +92,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (io.jsonwebtoken.JwtException | IllegalStateException | UsernameNotFoundException ex) {
             // Known auth failures: token invalid/expired, misconfigured JWT secret, or missing user
-            logger.warn("Authentication failed: {}", ex.getMessage());
+            // Log the detailed exception for operators, but return a generic message to clients.
+            logger.warn("Authentication failed while processing JWT: {}", ex.toString());
             SecurityContextHolder.clearContext();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            String body = String.format("{\"error\":\"Unauthorized\",\"message\":\"%s\"}", ex.getMessage().replaceAll("\"","'"));
+            String body = "{\"error\":\"Unauthorized\",\"message\":\"Authentication failed\"}";
             response.getWriter().write(body);
+            response.getWriter().flush();
+            response.flushBuffer();
             return;
 
         } catch (Exception e) {
