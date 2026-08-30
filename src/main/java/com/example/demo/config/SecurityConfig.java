@@ -52,11 +52,16 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-                // Static resources
+                // Public MVC views and Static resources
                 .requestMatchers(
+                    "/",
+                    "/login",
+                    "/register",
+                    "/home",
                     "/css/**",
                     "/js/**",
-                    "/images/**"
+                    "/images/**",
+                    "/WEB-INF/**"
                 ).permitAll()
 
                 // Admin

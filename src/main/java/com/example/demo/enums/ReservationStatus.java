@@ -1,5 +1,8 @@
 package com.example.demo.enums;
 
-public class ReservationStatus {
-
+public enum ReservationStatus {
+    PENDING,
+    CONFIRMED,
+    CANCELLED
 }
+

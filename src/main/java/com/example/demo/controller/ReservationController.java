@@ -66,47 +66,12 @@ public class ReservationController {
             @RequestParam(required = false) String sort,
             Authentication authentication
     ) {
-        ReservationStatus rs = null;
-        if (status != null) {
-            try {
-                rs = ReservationStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException ex) {
-                throw new BadRequestException("Invalid status: " + status);
-            }
-        }
-
-        Sort sortObj = Sort.unsorted();
-        if (sort != null) {
-            // expected format: property,asc|desc
-            String[] parts = sort.split(",");
-            if (parts.length == 2) {
-                String dirStr = parts[1].trim().toLowerCase();
-                if (!dirStr.equals("asc") && !dirStr.equals("desc")) {
-                    throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
-                }
-                Sort.Direction dir;
-                try {
-                    dir = Sort.Direction.fromString(dirStr);
-                } catch (IllegalArgumentException ex) {
-                    throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
-                }
-                sortObj = Sort.by(dir, parts[0]);
-            } else {
-                sortObj = Sort.by(sort);
-            }
-        }
-        // validate pagination inputs to return structured 400 errors instead of 500
-        if (page < 0) {
-            throw new BadRequestException("'page' must be >= 0");
-        }
-        if (size <= 0 || size > 200) {
-            throw new BadRequestException("'size' must be > 0 and <= 200");
-        }
-
+        validatePagination(page, size);
+        ReservationStatus rs = parseReservationStatus(status);
+        Sort sortObj = parseSort(sort);
         PageRequest pageable = PageRequest.of(page, size, sortObj);
 
-        boolean admin = isAdmin(authentication);
-        if (admin) {
+        if (isAdmin(authentication)) {
             return reservationService.searchReservationsForAdmin(rs, minPrice, maxPrice, pageable);
         }
         if (authentication == null) {
@@ -116,13 +81,51 @@ public class ReservationController {
         return reservationService.searchReservationsForUser(userId, rs, minPrice, maxPrice, pageable);
     }
 
+    private ReservationStatus parseReservationStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return ReservationStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid status: " + status);
+        }
+    }
+
+    private Sort parseSort(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return Sort.unsorted();
+        }
+        String[] parts = sort.split(",");
+        if (parts.length == 2) {
+            String dirStr = parts[1].trim().toLowerCase();
+            if (!dirStr.equals("asc") && !dirStr.equals("desc")) {
+                throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
+            }
+            try {
+                Sort.Direction dir = Sort.Direction.fromString(dirStr);
+                return Sort.by(dir, parts[0].trim());
+            } catch (IllegalArgumentException ex) {
+                throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
+            }
+        }
+        return Sort.by(sort.trim());
+    }
+
+    private void validatePagination(int page, int size) {
+        if (page < 0) {
+            throw new BadRequestException("'page' must be >= 0");
+        }
+        if (size <= 0 || size > 200) {
+            throw new BadRequestException("'size' must be > 0 and <= 200");
+        }
+    }
+
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ReservationDto updateStatus(@PathVariable Long id, @RequestParam String status) {
-        ReservationStatus rs;
-        try {
-            rs = ReservationStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException ex) {
+        ReservationStatus rs = parseReservationStatus(status);
+        if (rs == null) {
             throw new BadRequestException("Invalid status: " + status);
         }
         return reservationService.updateStatus(id, rs);
