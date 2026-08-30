@@ -36,11 +36,11 @@ public class SecurityConfig {
 
             // Add common security headers to mitigate clickjacking, MIME sniffing,
             // and enforce HSTS for HTTPS deployments.
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
-                .contentTypeOptions(contentTypeOptions -> {})
-                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
-            )
+            .headers(headers -> {
+                headers.frameOptions(frame -> frame.sameOrigin());
+                headers.contentTypeOptions(Customizer.withDefaults());
+                headers.httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000));
+            })
 
             .sessionManagement(session ->
                 session.sessionCreationPolicy(
