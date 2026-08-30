@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -82,34 +83,46 @@ public class ReservationController {
     }
 
     private ReservationStatus parseReservationStatus(String status) {
-        if (status == null || status.isBlank()) {
+        if (status == null) {
             return null;
         }
         try {
-            return ReservationStatus.valueOf(status.trim().toUpperCase());
+            return ReservationStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException ex) {
             throw new BadRequestException("Invalid status: " + status);
         }
     }
 
     private Sort parseSort(String sort) {
-        if (sort == null || sort.isBlank()) {
+        if (sort == null) {
             return Sort.unsorted();
         }
         String[] parts = sort.split(",");
+        String property = parts[0].trim();
+        validateSortProperty(property);
+
         if (parts.length == 2) {
             String dirStr = parts[1].trim().toLowerCase();
             if (!dirStr.equals("asc") && !dirStr.equals("desc")) {
                 throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
             }
+            Sort.Direction dir;
             try {
-                Sort.Direction dir = Sort.Direction.fromString(dirStr);
-                return Sort.by(dir, parts[0].trim());
+                dir = Sort.Direction.fromString(dirStr);
             } catch (IllegalArgumentException ex) {
                 throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
             }
+            return Sort.by(dir, property);
+        } else {
+            return Sort.by(property);
         }
-        return Sort.by(sort.trim());
+    }
+
+    private void validateSortProperty(String property) {
+        List<String> allowed = List.of("id", "startTime", "endTime", "price", "status", "resource.id", "user.id");
+        if (!allowed.contains(property)) {
+            throw new BadRequestException("Invalid sort property: " + property + ". Allowed: " + allowed);
+        }
     }
 
     private void validatePagination(int page, int size) {
@@ -124,8 +137,10 @@ public class ReservationController {
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ReservationDto updateStatus(@PathVariable Long id, @RequestParam String status) {
-        ReservationStatus rs = parseReservationStatus(status);
-        if (rs == null) {
+        ReservationStatus rs;
+        try {
+            rs = ReservationStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException ex) {
             throw new BadRequestException("Invalid status: " + status);
         }
         return reservationService.updateStatus(id, rs);

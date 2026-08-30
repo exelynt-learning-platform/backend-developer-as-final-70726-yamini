@@ -11,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.Customizer;
 
 import com.example.demo.security.JwtAuthenticationFilter;
 
@@ -30,6 +31,7 @@ public class SecurityConfig {
 
         http
 
+            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
 
             // Add common security headers to mitigate clickjacking, MIME sniffing,

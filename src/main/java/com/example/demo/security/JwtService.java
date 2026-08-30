@@ -1,14 +1,14 @@
 package com.example.demo.security;
 
-import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
-import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
@@ -21,7 +21,7 @@ public class JwtService {
     @Value("${app.jwt.expiration:86400000}")
     private long jwtExpiration;
 
-    private volatile SecretKey signingKey;
+    private volatile Key signingKey;
 
     // Generate JWT token
     public String generateToken(String email) {
@@ -29,10 +29,10 @@ public class JwtService {
         Date expirationDate = new Date(currentDate.getTime() + jwtExpiration);
 
         return Jwts.builder()
-                .subject(email)
-                .issuedAt(currentDate)
-                .expiration(expirationDate)
-                .signWith(getSigningKey())
+                .setSubject(email)
+                .setIssuedAt(currentDate)
+                .setExpiration(expirationDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -44,10 +44,10 @@ public class JwtService {
     // Extract all claims
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .setSigningKey(getSigningKey())
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     // Check whether token is expired
@@ -64,7 +64,7 @@ public class JwtService {
     }
 
     // Create signing key
-    private SecretKey getSigningKey() {
+    private Key getSigningKey() {
         if (signingKey != null) {
             return signingKey;
         }
@@ -82,7 +82,7 @@ public class JwtService {
             try {
                 keyBytes = Decoders.BASE64.decode(secretKey);
             } catch (Exception ex) {
-                keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+                keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
             }
 
             if (keyBytes.length < 32) {
