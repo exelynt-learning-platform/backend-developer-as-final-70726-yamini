@@ -83,7 +83,7 @@ public class SecurityIntegrationTest {
     @Test
     void securedEndpoints_WithoutToken_ReturnsForbidden() throws Exception {
         mockMvc.perform(get("/api/resources"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

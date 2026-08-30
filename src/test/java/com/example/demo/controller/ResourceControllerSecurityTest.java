@@ -71,6 +71,6 @@ public class ResourceControllerSecurityTest {
         mockMvc.perform(post("/api/resources")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

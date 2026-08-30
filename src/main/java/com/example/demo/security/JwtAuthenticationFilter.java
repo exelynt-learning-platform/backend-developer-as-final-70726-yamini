@@ -26,13 +26,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
+    private final org.springframework.web.servlet.HandlerExceptionResolver resolver;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            CustomUserDetailsService customUserDetailsService) {
+            CustomUserDetailsService customUserDetailsService,
+            @org.springframework.beans.factory.annotation.Qualifier("handlerExceptionResolver") org.springframework.web.servlet.HandlerExceptionResolver resolver) {
 
         this.jwtService = jwtService;
         this.customUserDetailsService = customUserDetailsService;
+        this.resolver = resolver;
     }
 
     @Override
@@ -92,21 +95,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (io.jsonwebtoken.JwtException | IllegalStateException | UsernameNotFoundException ex) {
             // Known auth failures: token invalid/expired, misconfigured JWT secret, or missing user
-            // Log the detailed exception for operators, but return a generic message to clients.
             logger.warn("Authentication failed while processing JWT: {}", ex.toString());
             SecurityContextHolder.clearContext();
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            String body = "{\"error\":\"Unauthorized\",\"message\":\"Authentication failed\"}";
-            response.getWriter().write(body);
-            response.getWriter().flush();
-            response.flushBuffer();
+            resolver.resolveException(request, response, null, new com.example.demo.exception.AuthenticationException(ex.getMessage()));
             return;
 
         } catch (Exception e) {
             // Unexpected errors: clear context and continue so other filters/handlers can respond
             logger.error("Unexpected error in JWT filter", e);
             SecurityContextHolder.clearContext();
+            resolver.resolveException(request, response, null, new com.example.demo.exception.AuthenticationException(e.getMessage()));
+            return;
         }
 
         // 11. Continue request

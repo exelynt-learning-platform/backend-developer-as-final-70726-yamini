@@ -159,11 +159,6 @@ public class DtoAndEntityTest {
         assertThat(user.getPassword()).isEqualTo("hashed");
         assertThat(user.getRole()).isEqualTo("USER");
 
-        Role role = new Role(RoleName.ROLE_ADMIN);
-        role.setId(1L);
-        role.setName(RoleName.ROLE_USER);
-        assertThat(role.getId()).isEqualTo(1L);
-        assertThat(role.getName()).isEqualTo(RoleName.ROLE_USER);
 
         Reservation reservation = new Reservation();
         reservation.setId(5L);

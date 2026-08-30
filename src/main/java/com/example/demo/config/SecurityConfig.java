@@ -20,9 +20,11 @@ import com.example.demo.security.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final org.springframework.web.servlet.HandlerExceptionResolver resolver;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, @org.springframework.beans.factory.annotation.Qualifier("handlerExceptionResolver") org.springframework.web.servlet.HandlerExceptionResolver resolver) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.resolver = resolver;
     }
 
     @Bean
@@ -33,14 +35,14 @@ public class SecurityConfig {
 
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
+            .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> resolver.resolveException(request, response, null, new com.example.demo.exception.AuthenticationException(authException.getMessage()))))
 
             // Add common security headers to mitigate clickjacking, MIME sniffing,
             // and enforce HSTS for HTTPS deployments.
-            .headers(headers -> {
-                headers.frameOptions(frame -> frame.sameOrigin());
-                headers.contentTypeOptions(Customizer.withDefaults());
-                headers.httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000));
-            })
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+            )
 
             .sessionManagement(session ->
                 session.sessionCreationPolicy(
