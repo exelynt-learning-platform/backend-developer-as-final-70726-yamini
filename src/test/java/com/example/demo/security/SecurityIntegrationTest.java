@@ -37,6 +37,30 @@ public class SecurityIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        if (!userRepository.existsByEmail("admin@example.com")) {
+            User admin = new User();
+            admin.setName("Admin");
+            admin.setEmail("admin@example.com");
+            admin.setPassword(passwordEncoder.encode("adminpass"));
+            admin.setRole("ADMIN");
+            userRepository.save(admin);
+        }
+
+        if (!userRepository.existsByEmail("user@example.com")) {
+            User user = new User();
+            user.setName("User");
+            user.setEmail("user@example.com");
+            user.setPassword(passwordEncoder.encode("userpass"));
+            user.setRole("USER");
+            userRepository.save(user);
+        }
+    }
+
     private String getAdminToken() throws Exception {
         LoginRequest req = new LoginRequest();
         req.setEmail("admin@example.com");

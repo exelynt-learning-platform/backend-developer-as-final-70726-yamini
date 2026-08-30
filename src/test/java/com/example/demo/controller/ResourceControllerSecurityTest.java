@@ -26,6 +26,24 @@ public class ResourceControllerSecurityTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private com.example.demo.repository.UserRepository userRepository;
+
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        if (!userRepository.existsByEmail("admin@example.com")) {
+            com.example.demo.entity.User admin = new com.example.demo.entity.User();
+            admin.setName("Admin");
+            admin.setEmail("admin@example.com");
+            admin.setPassword(passwordEncoder.encode("adminpass"));
+            admin.setRole("ADMIN");
+            userRepository.save(admin);
+        }
+    }
+
     private String loginAndGetToken(String email, String password) throws Exception {
         Map<String, String> req = Map.of("email", email, "password", password);
         String result = mockMvc.perform(post("/api/auth/login")
