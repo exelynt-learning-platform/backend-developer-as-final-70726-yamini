@@ -11,7 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class DataInitializer {
 
-	@Value("${app.seed.enabled:false}")
+	@Value("${app.seed.enabled:true}")
 	private boolean seedEnabled;
 
 	@Bean

@@ -219,6 +219,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.example.demo.ResourceBookingSystemApplication</mainClass>
+                </configuration>
             </plugin>
 
             <!-- JaCoCo code coverage -->
