@@ -8,6 +8,7 @@ import com.example.demo.exception.GlobalExceptionHandler;
 import com.example.demo.exception.ReservationNotFoundException;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ReservationService;
+import com.example.demo.service.UserContextService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,6 +121,8 @@ public class ReservationControllerTest {
     @Test
     @WithMockUser(username = "admin@example.com", roles = {"ADMIN"})
     void searchReservations_Admin_Success() throws Exception {
+        when(userContextService.isAdmin(any())).thenReturn(true);
+        when(userContextService.currentUserId(any())).thenReturn(2L);
         Page<ReservationDto> page = new PageImpl<>(List.of(sampleDto));
         when(reservationService.searchReservationsForAdmin(any(), any(), any(), any(Pageable.class))).thenReturn(page);
 
@@ -221,6 +224,8 @@ public class ReservationControllerTest {
     @Test
     @WithMockUser(username = "admin@example.com", roles = {"ADMIN"})
     void deleteReservation_Admin_Success() throws Exception {
+        when(userContextService.isAdmin(any())).thenReturn(true);
+        when(userContextService.currentUserId(any())).thenReturn(2L);
         doNothing().when(reservationService).deleteReservation(100L);
 
         mockMvc.perform(delete("/api/reservations/100")
