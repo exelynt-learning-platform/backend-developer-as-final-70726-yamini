@@ -21,7 +21,6 @@ public class JwtService {
     @Value("${app.jwt.expiration:86400000}")
     private long jwtExpiration;
 
-    private volatile Key signingKey;
 
     // Generate JWT token
     public String generateToken(String email) {
@@ -65,32 +64,23 @@ public class JwtService {
 
     // Create signing key
     private Key getSigningKey() {
-        if (signingKey != null) {
-            return signingKey;
+        if (secretKey == null || secretKey.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret is not configured. Please set 'app.jwt.secret' in your configuration or JWT_SECRET in your environment.");
         }
 
-        synchronized (this) {
-            if (signingKey != null) {
-                return signingKey;
-            }
-
-            if (secretKey == null || secretKey.trim().isEmpty()) {
-                throw new IllegalStateException("JWT secret is not configured. Please set 'app.jwt.secret' in your configuration or JWT_SECRET in your environment.");
-            }
-
-            byte[] keyBytes;
-            try {
-                keyBytes = Decoders.BASE64.decode(secretKey);
-            } catch (Exception ex) {
-                keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            }
-
-            if (keyBytes.length < 32) {
-                throw new IllegalStateException("JWT secret must be at least 256 bits (32 bytes). Provide a Base64-encoded 256-bit key or a raw secret >= 32 bytes.");
-            }
-
-            signingKey = Keys.hmacShaKeyFor(keyBytes);
-            return signingKey;
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(secretKey);
+        } catch (IllegalArgumentException | io.jsonwebtoken.io.DecodingException ex) {
+            keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid JWT secret format.", ex);
         }
+
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT secret must be at least 256 bits (32 bytes). Provide a Base64-encoded 256-bit key or a raw secret >= 32 bytes.");
+        }
+
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

@@ -63,8 +63,12 @@ public class ReservationService {
         return ReservationMapper.toDto(saved);
     }
 
+    private Reservation findReservationById(Long id) {
+        return reservationRepository.findById(id).orElseThrow(() -> new ReservationNotFoundException("Reservation not found: " + id));
+    }
+
     public ReservationDto getReservation(Long id, Long requesterId, boolean isAdmin) {
-        Reservation r = reservationRepository.findById(id).orElseThrow(() -> new ReservationNotFoundException("Reservation not found: " + id));
+        Reservation r = findReservationById(id);
         if (!isAdmin && !r.getUser().getId().equals(requesterId)) {
             throw new UnauthorizedException("Access denied");
         }
@@ -92,7 +96,7 @@ public class ReservationService {
     private Specification<Reservation> buildSpecification(Long userId, ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice) {
         validatePriceRange(minPrice, maxPrice);
         return (root, query, cb) -> {
-            java.util.List<jakarta.persistence.criteria.Predicate> preds = new java.util.ArrayList<>();
+            java.util.List<jakarta.persistence.criteria.Predicate> preds = new java.util.ArrayList<>(3);
 
             if (userId != null) {
                 preds.add(cb.equal(root.get("user").get("id"), userId));
@@ -115,7 +119,7 @@ public class ReservationService {
     }
 
     public ReservationDto updateStatus(Long reservationId, ReservationStatus newStatus) {
-        Reservation r = reservationRepository.findById(reservationId).orElseThrow(() -> new ReservationNotFoundException("Reservation not found: " + reservationId));
+        Reservation r = findReservationById(reservationId);
         r.setStatus(newStatus);
         Reservation saved = reservationRepository.save(r);
         return ReservationMapper.toDto(saved);

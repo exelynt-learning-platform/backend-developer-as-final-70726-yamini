@@ -70,13 +70,13 @@ public class AuthServiceImpl implements AuthService {
         // always throw a generic authentication exception to the client.
         User user = userRepository.findByEmail(request.getEmail()).orElse(null);
         if (user == null) {
-            logger.warn("Authentication failed for unknown email: {}", request.getEmail());
+            logger.warn("Authentication failed: unknown email or user not found");
             throw new com.example.demo.exception.AuthenticationException("Invalid email or password");
         }
 
         boolean passwordMatches = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!passwordMatches) {
-            logger.warn("Authentication failed for email: {} (bad credentials)", request.getEmail());
+            logger.warn("Authentication failed: bad credentials provided");
             throw new com.example.demo.exception.AuthenticationException("Invalid email or password");
         }
 

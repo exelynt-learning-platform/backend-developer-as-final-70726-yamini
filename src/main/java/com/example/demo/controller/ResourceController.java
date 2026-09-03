@@ -40,8 +40,8 @@ public class ResourceController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResourceDto update(@PathVariable Long id, @RequestBody ResourceDto dto) {
-        return resourceService.update(id, dto);
+    public ResponseEntity<ResourceDto> update(@PathVariable Long id, @RequestBody ResourceDto dto) {
+        return ResponseEntity.ok(resourceService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")

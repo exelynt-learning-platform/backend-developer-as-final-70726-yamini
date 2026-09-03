@@ -53,7 +53,7 @@ public class ReservationControllerTest {
     private ReservationService reservationService;
 
     @MockBean
-    private UserRepository userRepository;
+    private UserContextService userContextService;
 
     @MockBean
     private com.example.demo.security.JwtService jwtService;
@@ -92,7 +92,8 @@ public class ReservationControllerTest {
     @Test
     @WithMockUser(username = "user@example.com", roles = {"USER"})
     void createReservation_Success() throws Exception {
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
+        when(userContextService.currentUserId(any())).thenReturn(1L);
+        when(userContextService.isAdmin(any())).thenReturn(false);
         when(reservationService.createReservation(any(ReservationDto.class), eq(1L))).thenReturn(sampleDto);
 
         mockMvc.perform(post("/api/reservations")
@@ -107,7 +108,8 @@ public class ReservationControllerTest {
     @Test
     @WithMockUser(username = "user@example.com", roles = {"USER"})
     void getReservation_Success() throws Exception {
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
+        when(userContextService.currentUserId(any())).thenReturn(1L);
+        when(userContextService.isAdmin(any())).thenReturn(false);
         when(reservationService.getReservation(100L, 1L, false)).thenReturn(sampleDto);
 
         mockMvc.perform(get("/api/reservations/100"))
@@ -135,7 +137,8 @@ public class ReservationControllerTest {
     @Test
     @WithMockUser(username = "user@example.com", roles = {"USER"})
     void searchReservations_User_Success() throws Exception {
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
+        when(userContextService.currentUserId(any())).thenReturn(1L);
+        when(userContextService.isAdmin(any())).thenReturn(false);
         Page<ReservationDto> page = new PageImpl<>(List.of(sampleDto));
         when(reservationService.searchReservationsForUser(eq(1L), any(), any(), any(), any(Pageable.class))).thenReturn(page);
 
@@ -230,7 +233,8 @@ public class ReservationControllerTest {
     @Test
     @WithMockUser(username = "user@example.com", roles = {"USER"})
     void deleteReservation_User_Success() throws Exception {
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
+        when(userContextService.currentUserId(any())).thenReturn(1L);
+        when(userContextService.isAdmin(any())).thenReturn(false);
         doNothing().when(reservationService).deleteReservation(100L, 1L, false);
 
         mockMvc.perform(delete("/api/reservations/100")

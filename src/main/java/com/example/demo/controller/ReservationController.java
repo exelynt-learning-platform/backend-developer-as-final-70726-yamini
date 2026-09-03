@@ -23,27 +23,17 @@ import java.util.List;
 public class ReservationController {
 
     private final ReservationService reservationService;
-    private final UserRepository userRepository;
+    private final com.example.demo.service.UserContextService userContextService;
 
-    public ReservationController(ReservationService reservationService, UserRepository userRepository) {
+    public ReservationController(ReservationService reservationService, com.example.demo.service.UserContextService userContextService) {
         this.reservationService = reservationService;
-        this.userRepository = userRepository;
-    }
-
-    private Long currentUserId(Authentication authentication) {
-        String email = authentication == null ? null : authentication.getName();
-        if (email == null) throw new UnauthorizedException("Unauthenticated");
-        return userRepository.findByEmail(email).orElseThrow(() -> new UnauthorizedException("User not found: " + email)).getId();
-    }
-
-    private boolean isAdmin(Authentication authentication) {
-        return authentication != null && authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        this.userContextService = userContextService;
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<ReservationDto> create(@RequestBody ReservationDto dto, Authentication authentication) {
-        Long userId = currentUserId(authentication);
+        Long userId = userContextService.currentUserId(authentication);
         ReservationDto created = reservationService.createReservation(dto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -51,8 +41,8 @@ public class ReservationController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ReservationDto get(@PathVariable Long id, Authentication authentication) {
-        Long requesterId = currentUserId(authentication);
-        boolean admin = isAdmin(authentication);
+        Long requesterId = userContextService.currentUserId(authentication);
+        boolean admin = userContextService.isAdmin(authentication);
         return reservationService.getReservation(id, requesterId, admin);
     }
 
@@ -67,18 +57,18 @@ public class ReservationController {
             @RequestParam(required = false) String sort,
             Authentication authentication
     ) {
-        validatePagination(page, size);
         ReservationStatus rs = parseReservationStatus(status);
-        Sort sortObj = parseSort(sort);
-        PageRequest pageable = PageRequest.of(page, size, sortObj);
+        PageRequest pageable = com.example.demo.util.QueryValidationUtils.createPageRequest(
+                page, size, sort,
+                List.of("id", "startTime", "endTime", "price", "status", "resource.id", "user.id"));
 
-        if (isAdmin(authentication)) {
+        if (userContextService.isAdmin(authentication)) {
             return reservationService.searchReservationsForAdmin(rs, minPrice, maxPrice, pageable);
         }
         if (authentication == null) {
             throw new UnauthorizedException("Unauthenticated");
         }
-        Long userId = currentUserId(authentication);
+        Long userId = userContextService.currentUserId(authentication);
         return reservationService.searchReservationsForUser(userId, rs, minPrice, maxPrice, pageable);
     }
 
@@ -93,55 +83,12 @@ public class ReservationController {
         }
     }
 
-    private Sort parseSort(String sort) {
-        if (sort == null) {
-            return Sort.unsorted();
-        }
-        String[] parts = sort.split(",");
-        String property = parts[0].trim();
-        validateSortProperty(property);
-
-        if (parts.length == 2) {
-            String dirStr = parts[1].trim().toLowerCase();
-            if (!dirStr.equals("asc") && !dirStr.equals("desc")) {
-                throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
-            }
-            Sort.Direction dir;
-            try {
-                dir = Sort.Direction.fromString(dirStr);
-            } catch (IllegalArgumentException ex) {
-                throw new BadRequestException("Invalid sort direction: " + parts[1] + "; expected 'asc' or 'desc'");
-            }
-            return Sort.by(dir, property);
-        } else {
-            return Sort.by(property);
-        }
-    }
-
-    private void validateSortProperty(String property) {
-        List<String> allowed = List.of("id", "startTime", "endTime", "price", "status", "resource.id", "user.id");
-        if (!allowed.contains(property)) {
-            throw new BadRequestException("Invalid sort property: " + property + ". Allowed: " + allowed);
-        }
-    }
-
-    private void validatePagination(int page, int size) {
-        if (page < 0) {
-            throw new BadRequestException("'page' must be >= 0");
-        }
-        if (size <= 0 || size > 200) {
-            throw new BadRequestException("'size' must be > 0 and <= 200");
-        }
-    }
-
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ReservationDto updateStatus(@PathVariable Long id, @RequestParam String status) {
-        ReservationStatus rs;
-        try {
-            rs = ReservationStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            throw new BadRequestException("Invalid status: " + status);
+        ReservationStatus rs = parseReservationStatus(status);
+        if (rs == null) {
+            throw new BadRequestException("Status cannot be null");
         }
         return reservationService.updateStatus(id, rs);
     }
@@ -149,12 +96,12 @@ public class ReservationController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
-        boolean admin = isAdmin(authentication);
+        boolean admin = userContextService.isAdmin(authentication);
         if (admin) {
             reservationService.deleteReservation(id);
             return ResponseEntity.noContent().build();
         }
-        Long userId = currentUserId(authentication);
+        Long userId = userContextService.currentUserId(authentication);
         // perform atomic ownership-checked delete to avoid TOCTOU
         reservationService.deleteReservation(id, userId, false);
         return ResponseEntity.noContent().build();
