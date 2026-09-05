@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ResourceDto;
+import jakarta.validation.Valid;
 import com.example.demo.service.ResourceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,14 +34,14 @@ public class ResourceController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ResourceDto> create(@RequestBody ResourceDto dto) {
+    public ResponseEntity<ResourceDto> create(@Valid @RequestBody ResourceDto dto) {
         ResourceDto created = resourceService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResourceDto update(@PathVariable Long id, @RequestBody ResourceDto dto) {
+    public ResourceDto update(@PathVariable Long id, @Valid @RequestBody ResourceDto dto) {
         return resourceService.update(id, dto);
     }
 

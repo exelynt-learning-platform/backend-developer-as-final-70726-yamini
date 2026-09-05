@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ReservationDto;
+import jakarta.validation.Valid;
 import com.example.demo.entity.ReservationStatus;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.exception.UnauthorizedException;
@@ -42,7 +43,7 @@ public class ReservationController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public ResponseEntity<ReservationDto> create(@RequestBody ReservationDto dto, Authentication authentication) {
+    public ResponseEntity<ReservationDto> create(@Valid @RequestBody ReservationDto dto, Authentication authentication) {
         Long userId = currentUserId(authentication);
         ReservationDto created = reservationService.createReservation(dto, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
