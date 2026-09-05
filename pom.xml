@@ -239,6 +239,13 @@
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
+                        <configuration>
+                            <formats>
+                                <format>HTML</format>
+                                <format>XML</format>
+                                <format>CSV</format>
+                            </formats>
+                        </configuration>
                         <goals>
                             <goal>report</goal>
                         </goals>

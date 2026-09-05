@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -50,34 +49,58 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Get Authorization header
+        // =====================================================
+        // 1. Get Authorization header
+        // =====================================================
+
         String authHeader = request.getHeader("Authorization");
 
-        // No JWT token -> continue normally
+        // No JWT → continue request
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Extract token
+        // =====================================================
+        // 2. Extract JWT token
+        // =====================================================
+
         String token = authHeader.substring(7).trim();
 
-        // Empty token -> continue
         if (token.isEmpty()) {
+
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            // Extract email from JWT
+
+            // =================================================
+            // 3. Extract username/email from JWT
+            // =================================================
+
             String email = jwtService.extractUsername(token);
 
-            // Only authenticate if user is not already authenticated
-            if (email != null
-                    && SecurityContextHolder.getContext()
-                            .getAuthentication() == null) {
+            if (email == null || email.isBlank()) {
 
-                // Validate token BEFORE database lookup
+                logger.warn("JWT does not contain username/email");
+
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // =================================================
+            // 4. Check whether user is already authenticated
+            // =================================================
+
+            if (SecurityContextHolder.getContext()
+                    .getAuthentication() == null) {
+
+                // =============================================
+                // 5. Validate JWT
+                // =============================================
+
                 if (!jwtService.isTokenValid(token, email)) {
 
                     logger.warn(
@@ -99,11 +122,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                // Load user from database
-                UserDetails userDetails =
-                        customUserDetailsService.loadUserByUsername(email);
+                // =============================================
+                // 6. Load user from database
+                // =============================================
 
-                // Create authentication
+                UserDetails userDetails =
+                        customUserDetailsService
+                                .loadUserByUsername(email);
+
+                // =============================================
+                // 7. Create Authentication object
+                // =============================================
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
@@ -111,13 +141,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 userDetails.getAuthorities()
                         );
 
-                // Add request details
+                // =============================================
+                // 8. Add request details
+                // =============================================
+
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource()
                                 .buildDetails(request)
                 );
 
-                // Store authentication
+                // =============================================
+                // 9. Store authentication in SecurityContext
+                // =============================================
+
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
 
@@ -128,8 +164,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
         } catch (JwtException
-                | IllegalStateException
-                | UsernameNotFoundException ex) {
+                | IllegalStateException ex) {
 
             logger.warn(
                     "JWT authentication failed: {}",
@@ -143,7 +178,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     response,
                     null,
                     new AuthenticationException(
-                            ex.getMessage()
+                            "Invalid or expired JWT token"
                     )
             );
 
@@ -170,7 +205,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Continue request
+        // =====================================================
+        // 10. Continue request
+        // =====================================================
+
         filterChain.doFilter(request, response);
     }
 }

@@ -6,6 +6,7 @@ public class LoginResponse {
     private String email;
     private String token;
     private String tokenType = "Bearer";
+    private String role;
 
     public LoginResponse() {
     }
@@ -42,10 +43,19 @@ public class LoginResponse {
         this.tokenType = tokenType;
     }
 
-	@Override
-    public String toString() {
-        return "LoginResponse [message=" + message + ", email=" + email + ", tokenType=" + tokenType + "]";
+    public String getRole() {
+        return role;
     }
-    
-    
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    @Override
+    public String toString() {
+        return "LoginResponse [message=" + message
+                + ", email=" + email
+                + ", tokenType=" + tokenType
+                + ", role=" + role + "]";
+    }
 }

@@ -25,6 +25,24 @@ docker-compose up -d
 ```
 
 ### 2. Build and Run
+Set the database and JWT values in your shell before starting the application. The repository does not contain database usernames, database passwords, or JWT secrets.
+
+Windows PowerShell:
+```powershell
+$env:DB_USERNAME = "your_mysql_username"
+$env:DB_PASSWORD = "your_mysql_password"
+$env:JWT_SECRET = "generate-a-random-secret-at-least-32-characters-long"
+$env:APP_SEED_ENABLED = "true"
+```
+
+Linux/macOS:
+```bash
+export DB_USERNAME=your_mysql_username
+export DB_PASSWORD=your_mysql_password
+export JWT_SECRET=generate-a-random-secret-at-least-32-characters-long
+export APP_SEED_ENABLED=true
+```
+
 You can package the application into a JAR and run it, or run it directly using the Maven plugin:
 ```bash
 # Build and package
@@ -72,5 +90,7 @@ mvn clean test
 ```
 
 ## Configuration & Security Notes
-- **JWT Secret**: Configured in `application.properties`. For local development, a static fallback (`somerandomloremipsumdolorsitamet`) is used. **In production, ALWAYS override this by setting the `JWT_SECRET` environment variable.**
-- **Database Credentials**: By default, it connects to a local `resource_booking_db` MySQL database. Set `DB_USERNAME` and `DB_PASSWORD` environment variables to override the defaults.
+- **JWT Secret**: Set `JWT_SECRET` in the environment. It must be at least 32 bytes and is never generated or stored by the application.
+- **Database Credentials**: Set `DB_USERNAME` and `DB_PASSWORD` in the environment. No database username or password is committed to the repository.
+- **Seed Data**: Set `APP_SEED_ENABLED=true` only for a development/test database. Keep it false in production and change seeded passwords before use.
+- **Tests**: `mvn clean test` uses an embedded H2 database and does not require MySQL credentials.
