@@ -153,28 +153,22 @@
     document.getElementById("loginForm")
         .addEventListener("submit", async function(event) {
 
-            // Stop normal form submission
+            // Prevent normal form submission
             event.preventDefault();
-
 
             // Get email
             const email =
                 document.getElementById("email").value;
 
-
             // Get password
             const password =
                 document.getElementById("password").value;
 
-
             // Create JSON object
             const loginData = {
-
                 email: email,
                 password: password
-
             };
-
 
             try {
 
@@ -192,23 +186,17 @@
                     }
                 );
 
+                // Read JSON response
+                const data =
+                    await response.json();
 
-                // Read response JSON
-                const data = await response.json();
+                console.log("Login Response:", data);
 
 
-                // Login successful
+                // =================================================
+                // LOGIN SUCCESS
+                // =================================================
                 if (response.ok) {
-
-                    console.log(
-                        "Login successful"
-                    );
-
-                    console.log(
-                        "Login Response:",
-                        data
-                    );
-
 
                     // Save JWT token
                     if (data.token) {
@@ -217,9 +205,16 @@
                             "token",
                             data.token
                         );
-
                     }
 
+                    // Save role
+                    if (data.role) {
+
+                        localStorage.setItem(
+                            "role",
+                            data.role
+                        );
+                    }
 
                     // Show message
                     document.getElementById("message")
@@ -227,17 +222,38 @@
                         "Login successful. Redirecting...";
 
 
-                    // Redirect to HomeController
-                    window.location.href = "/home";
+                    // =================================================
+                    // ROLE BASED REDIRECTION
+                    // =================================================
+
+                    if (data.role === "ROLE_ADMIN") {
+
+                        // Admin
+                        window.location.href = "/admin";
+
+                    } else if (data.role === "ROLE_USER") {
+
+                        // Normal user
+                        window.location.href = "/home";
+
+                    } else {
+
+                        // Unknown role
+                        document.getElementById("message")
+                            .innerText =
+                            "Invalid user role.";
+                    }
 
 
                 } else {
 
-                    // Login failed
+                    // =================================================
+                    // LOGIN FAILED
+                    // =================================================
+
                     document.getElementById("message")
                         .innerText =
                         data.message || "Login failed.";
-
                 }
 
             } catch (error) {
@@ -250,13 +266,11 @@
                 document.getElementById("message")
                     .innerText =
                     "Something went wrong.";
-
             }
 
         });
 
 </script>
-
 
 </body>
 
